@@ -115,6 +115,10 @@ for (let i = 0; i < 40; i++) {
 
   scene.add(trunk);
 
+blocks.push(trunk);
+
+trunk.userData.type = "Kayu";
+
   const leaves = new THREE.Mesh(
     new THREE.BoxGeometry(3, 3, 3),
     new THREE.MeshLambertMaterial({ color: 0x228833 })
