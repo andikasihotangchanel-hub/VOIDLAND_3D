@@ -197,7 +197,7 @@ scene.add(monster);
 // Player
 const player = {
   x: 0,
-  y: 2,
+  y: 1.5,
   z: 5,
   velY: 0,
   grounded: false,
@@ -261,35 +261,59 @@ jumpBtn.addEventListener('touchstart', () => {
 // Pickup
 pickupBtn.addEventListener("touchstart", () => {
 
-  raycaster.setFromCamera(
-    new THREE.Vector2(0,0),
-    camera
-  );
+  let closestBlock = null;
+  let closestDistance = 999;
 
-  const intersects = raycaster.intersectObjects(blocks, false);
+  blocks.forEach((block) => {
 
-  if(intersects.length > 0){
+    const distance = camera.position.distanceTo(block.position);
 
-    const hit = intersects[0].object;
+    if(distance < 5){
 
-    const distance = camera.position.distanceTo(hit.position);
+      // Cek arah depan kamera
+      const dir = new THREE.Vector3();
+      camera.getWorldDirection(dir);
 
-if(distance > 6) return;
+      const toBlock = new THREE.Vector3(
+        block.position.x - camera.position.x,
+        block.position.y - camera.position.y,
+        block.position.z - camera.position.z
+      ).normalize();
 
-    if(hit === ground) return;
+      const dot = dir.dot(toBlock);
 
-    scene.remove(hit);
+      // Harus menghadap block
+      if(dot > 0.8){
 
-    const type = hit.userData.type;
+        if(distance < closestDistance){
 
-    inventory.push(type);
+          closestDistance = distance;
+          closestBlock = block;
+
+        }
+
+      }
+
+    }
+
+  });
+
+  if(closestBlock){
+
+    scene.remove(closestBlock);
+
+    inventory.push(
+      closestBlock.userData.type
+    );
 
     updateHotbar();
 
-    const index = blocks.indexOf(hit);
+    const index = blocks.indexOf(closestBlock);
 
     if(index > -1){
+
       blocks.splice(index,1);
+
     }
 
   }
