@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VOIDLAND 3D</title>
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: sans-serif;
+  background: black;
+}canvas { display: block; }
+
+#ui { position: fixed; inset: 0; pointer-events: none; }
+
+#crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 25px; }
+
+#eventText { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: white; font-size: 22px; font-weight: bold; text-shadow: 0 0 10px black; }
+
+#joystickBase { position: fixed; left: 30px; bottom: 30px; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 3px solid rgba(255,255,255,0.25); pointer-events: auto; }
+
+#joystickStick { position: absolute; left: 35px; top: 35px; width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.5); }
+
+.btn { position: fixed; width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.3); color: white; font-size: 18px; font-weight: bold; pointer-events: auto; }
+
+#jumpBtn { right: 30px; bottom: 140px; }
+
+#pickupBtn { right: 30px; bottom: 40px; }
+
+#inventory { position: fixed; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; } </style>
+
+</head>
+<body><div id="ui">
+  <div id="crosshair">+</div>
+  <div id="eventText">Menjelajah VOIDLAND...</div>  <div id="inventory">
+    Kayu: <span id="woodCount">0</span>
+  </div>  <div id="joystickBase">
+    <div id="joystickStick"></div>
+  </div><button class="btn" id="jumpBtn">↑</button> <button class="btn" id="pickupBtn">Ambil</button>
+
+</div><script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x000000, 20, 100);
+
+const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(10, 20, 10);
+scene.add(light);
+
+scene.add(new THREE.AmbientLight(0x888888));
+
+// Ground
+const ground = new THREE.Mesh(
+  new THREE.BoxGeometry(200, 1, 200),
+  new THREE.MeshLambertMaterial({ color: 0x225522 })
+);
+ground.position.y = -1;
+scene.add(ground);
+
+// Trees
+for (let i = 0; i < 40; i++) {
+  const trunk = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 4, 1),
+    new THREE.MeshLambertMaterial({ color: 0x5b3a1a })
+  );
+
+  trunk.position.set(
+    (Math.random() - 0.5) * 150,
+    1,
+    (Math.random() - 0.5) * 150
+  );
+
+  scene.add(trunk);
+
+  const leaves = new THREE.Mesh(
+    new THREE.BoxGeometry(3, 3, 3),
+    new THREE.MeshLambertMaterial({ color: 0x228833 })
+  );
+
+  leaves.position.set(trunk.position.x, 4, trunk.position.z);
+  scene.add(leaves);
+}
+
+// Wood Items
+const woods = [];
+
+for (let i = 0; i < 15; i++) {
+  const wood = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshLambertMaterial({ color: 0xaa7744 })
+  );
+
+  wood.position.set(
+    (Math.random() - 0.5) * 80,
+    0,
+    (Math.random() - 0.5) * 80
+  );
+
+  wood.userData.collectable = true;
+
+  scene.add(wood);
+  woods.push(wood);
+}
+
+// Monster
+const monster = new THREE.Mesh(
+  new THREE.BoxGeometry(2, 3, 2),
+  new THREE.MeshLambertMaterial({ color: 0xff0000 })
+);
+monster.position.set(10, 1, 10);
+scene.add(monster);
+
+// Player
+const player = {
+  x: 0,
+  y: 2,
+  z: 5,
+  velY: 0,
+  grounded: false,
+  wood: 0
+};
+
+camera.position.set(player.x, player.y, player.z);
+
+// Joystick
+const joystickBase = document.getElementById('joystickBase');
+const joystickStick = document.getElementById('joystickStick');
+
+let joyX = 0;
+let joyY = 0;
+
+let dragging = false;
+
+joystickBase.addEventListener('touchstart', () => {
+  dragging = true;
+});
+
+window.addEventListener('touchend', () => {
+  dragging = false;
+  joyX = 0;
+  joyY = 0;
+  joystickStick.style.left = '35px';
+  joystickStick.style.top = '35px';
+});
+
+window.addEventListener('touchmove', (e) => {
+  if (!dragging) return;
+
+  const touch = e.touches[0];
+  const rect = joystickBase.getBoundingClientRect();
+
+  const x = touch.clientX - rect.left - 65;
+  const y = touch.clientY - rect.top - 65;
+
+  const dist = Math.min(40, Math.sqrt(x*x + y*y));
+  const angle = Math.atan2(y, x);
+
+  joyX = Math.cos(angle) * (dist / 40);
+  joyY = Math.sin(angle) * (dist / 40);
+
+  joystickStick.style.left = `${35 + joyX * 40}px`;
+  joystickStick.style.top = `${35 + joyY * 40}px`;
+});
+
+// Jump
+const jumpBtn = document.getElementById('jumpBtn');
+
+jumpBtn.addEventListener('touchstart', () => {
+  if (player.grounded) {
+    player.velY = 0.22;
+    player.grounded = false;
+  }
+});
+
+// Pickup
+const pickupBtn = document.getElementById('pickupBtn');
+
+pickupBtn.addEventListener('touchstart', () => {
+  woods.forEach((wood) => {
+    if (!wood.visible) return;
+
+    const dist = camera.position.distanceTo(wood.position);
+
+    if (dist < 4) {
+      wood.visible = false;
+      player.wood++;
+      document.getElementById('woodCount').innerText = player.wood;
+    }
+  });
+});
+
+// Random Events
+const eventText = document.getElementById('eventText');
+
+const events = [
+  {
+    name: '🌙 Blood Moon',
+    action: () => {
+      scene.fog.color.set(0x550000);
+      monster.material.color.set(0xff0000);
+    }
+  },
+  {
+    name: '☁ Kabut Misterius',
+    action: () => {
+      scene.fog.color.set(0x777777);
+    }
+  },
+  {
+    name: '🌍 Gempa!',
+    action: () => {
+      camera.position.x += (Math.random() - 0.5) * 2;
+    }
+  },
+  {
+    name: '✨ Supply Drop',
+    action: () => {
+      const wood = new THREE.Mesh(
+        new THREE.BoxGeometry(1,1,1),
+        new THREE.MeshLambertMaterial({ color: 0xffff00 })
+      );
+
+      wood.position.set(
+        player.x + 5,
+        0,
+        player.z + 5
+      );
+
+      wood.userData.collectable = true;
+
+      scene.add(wood);
+      woods.push(wood);
+    }
+  }
+];
+
+setInterval(() => {
+  const event = events[Math.floor(Math.random() * events.length)];
+
+  eventText.innerText = event.name;
+  event.action();
+
+  setTimeout(() => {
+    eventText.innerText = 'Menjelajah VOIDLAND...';
+    scene.fog.color.set(0x000000);
+  }, 7000);
+
+}, 15000);
+
+// Touch look
+let lastTouchX = null;
+
+window.addEventListener('touchmove', (e) => {
+  if (e.touches.length < 2) return;
+
+  const touch = e.touches[1];
+
+  if (lastTouchX !== null) {
+    const delta = touch.clientX - lastTouchX;
+    camera.rotation.y -= delta * 0.005;
+  }
+
+  lastTouchX = touch.clientX;
+});
+
+window.addEventListener('touchend', () => {
+  lastTouchX = null;
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const speed = 0.12;
+
+  const forwardX = Math.sin(camera.rotation.y);
+  const forwardZ = Math.cos(camera.rotation.y);
+
+  player.x += (forwardX * -joyY + forwardZ * joyX) * speed;
+  player.z += (forwardZ * -joyY - forwardX * joyX) * speed;
+
+  // Gravity
+  player.velY -= 0.01;
+  player.y += player.velY;
+
+  if (player.y <= 2) {
+    player.y = 2;
+    player.velY = 0;
+    player.grounded = true;
+  }
+
+  // Monster AI
+  const dx = player.x - monster.position.x;
+  const dz = player.z - monster.position.z;
+
+  const dist = Math.sqrt(dx*dx + dz*dz);
+
+  if (dist < 30) {
+    monster.position.x += dx * 0.003;
+    monster.position.z += dz * 0.003;
+  }
+
+  camera.position.set(player.x, player.y, player.z);
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+</script>
+</body>
+</html>
