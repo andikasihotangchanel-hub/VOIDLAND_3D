@@ -26,6 +26,11 @@ body {
 
 #jumpBtn { right: 30px; bottom: 140px; }
 
+  #placeBtn {
+  right: 30px;
+  bottom: 240px;
+  }
+
 #pickupBtn { right: 30px; bottom: 40px; }
 
 #inventory { position: fixed; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; }
@@ -68,6 +73,7 @@ body {
   </div>  <div id="joystickBase">
     <div id="joystickStick"></div>
   </div><button class="btn" id="jumpBtn">↑</button> <button class="btn" id="pickupBtn">Ambil</button>
+  <button class="btn" id="placeBtn">Taruh</button>
 
 <div id="hotbar"></div>
 
@@ -473,47 +479,42 @@ window.addEventListener("touchend", (e) => {
 
   let targetFov = 75;
 
-  window.addEventListener("dblclick", () => {
+  const placeBtn = document.getElementById("placeBtn");
+
+placeBtn.addEventListener("touchstart", () => {
 
   if(!selectedItem) return;
 
-  raycaster.setFromCamera(
-    new THREE.Vector2(0,0),
-    camera
-  );
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
 
-  const intersects = raycaster.intersectObject(ground);
+  const placeX = player.x + dir.x * 3;
+  const placeZ = player.z + dir.z * 3;
 
-  if(intersects.length > 0){
+  let block;
 
-    const point = intersects[0].point;
+  if(selectedItem === "Kayu"){
 
-    let block;
-
-    if(selectedItem === "Kayu"){
-
-      block = new THREE.Mesh(
-        new THREE.BoxGeometry(1,1,1),
-        new THREE.MeshLambertMaterial({
-          color: 0xaa7744
-        })
-      );
-
-      block.userData.type = "Kayu";
-
-    }
-
-    block.position.set(
-      Math.round(point.x),
-      0,
-      Math.round(point.z)
+    block = new THREE.Mesh(
+      new THREE.BoxGeometry(1,1,1),
+      new THREE.MeshLambertMaterial({
+        color: 0xaa7744
+      })
     );
 
-    scene.add(block);
-
-    blocks.push(block);
+    block.userData.type = "Kayu";
 
   }
+
+  block.position.set(
+    Math.round(placeX),
+    0,
+    Math.round(placeZ)
+  );
+
+  scene.add(block);
+
+  blocks.push(block);
 
 });
 
