@@ -275,13 +275,80 @@ window.addEventListener('touchend', () => {
   lastTouchX = null;
 });
 
+  // CAMERA TOUCH LOOK
+
+let lookTouchId = null;
+let lastLookX = 0;
+let lastLookY = 0;
+
+let cameraYaw = 0;
+let cameraPitch = 0;
+
+window.addEventListener("touchstart", (e) => {
+
+  for (let touch of e.touches) {
+
+    // Jangan ganggu joystick
+    if (touch.clientX > window.innerWidth / 2) {
+
+      lookTouchId = touch.identifier;
+      lastLookX = touch.clientX;
+      lastLookY = touch.clientY;
+
+    }
+
+  }
+
+});
+
+window.addEventListener("touchmove", (e) => {
+
+  for (let touch of e.touches) {
+
+    if (touch.identifier === lookTouchId) {
+
+      const deltaX = touch.clientX - lastLookX;
+      const deltaY = touch.clientY - lastLookY;
+
+      cameraYaw -= deltaX * 0.003;
+      cameraPitch -= deltaY * 0.003;
+
+      // Batas lihat atas bawah
+      cameraPitch = Math.max(
+        -1.2,
+        Math.min(1.2, cameraPitch)
+      );
+
+      lastLookX = touch.clientX;
+      lastLookY = touch.clientY;
+
+    }
+
+  }
+
+});
+
+window.addEventListener("touchend", (e) => {
+
+  for (let touch of e.changedTouches) {
+
+    if (touch.identifier === lookTouchId) {
+
+      lookTouchId = null;
+
+    }
+
+  }
+
+});
+
 function animate() {
   requestAnimationFrame(animate);
 
   const speed = 0.12;
 
-  const forwardX = Math.sin(camera.rotation.y);
-  const forwardZ = Math.cos(camera.rotation.y);
+  const forwardX = Math.sin(cameraYaw);
+const forwardZ = Math.cos(cameraYaw);
 
   player.x += (forwardX * -joyY + forwardZ * joyX) * speed;
   player.z += (forwardZ * -joyY - forwardX * joyX) * speed;
@@ -308,6 +375,11 @@ function animate() {
   }
 
   camera.position.set(player.x, player.y, player.z);
+
+  camera.rotation.order = "YXZ";
+
+camera.rotation.y = cameraYaw;
+camera.rotation.x = cameraPitch;
 
   renderer.render(scene, camera);
 }
