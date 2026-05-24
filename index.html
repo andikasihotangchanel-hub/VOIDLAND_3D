@@ -247,6 +247,8 @@ window.addEventListener('touchmove', (e) => {
 // Jump
 const jumpBtn = document.getElementById('jumpBtn');
 
+  const pickupBtn = document.getElementById('pickupBtn');
+
 jumpBtn.addEventListener('touchstart', () => {
   if (player.grounded) {
     player.velY = 0.22;
