@@ -628,10 +628,10 @@ if(!checkCollision(nextX, nextZ)){
   const dist = Math.sqrt(dx*dx + dz*dz);
 
   const campDx =
-player.x - campfire.position.x;
+monster.position.x - campfire.position.x;
 
 const campDz =
-player.z - campfire.position.z;
+monster.position.z - campfire.position.z;
 
 const campDist = Math.sqrt(
   campDx * campDx +
@@ -639,7 +639,7 @@ const campDist = Math.sqrt(
 );
 
 // Monster takut api unggun
-if(campDist > 1.5){
+if(campDist > 6){
 
   if (dist < 30) {
 
