@@ -137,6 +137,8 @@ trunk.userData.type = "Kayu";
     new THREE.MeshLambertMaterial({ color: 0x228833 })
   );
 
+  leaves.userData.noCollision = true;
+
   leaves.position.set(trunk.position.x, 4, trunk.position.z);
   scene.add(leaves);
 }
@@ -518,6 +520,44 @@ placeBtn.addEventListener("touchstart", () => {
 
 });
 
+  function checkCollision(newX, newZ){
+
+  let collided = false;
+
+  blocks.forEach((block) => {
+
+    // Daun tidak ada collision
+    if(block.userData.noCollision) return;
+
+    const dx = newX - block.position.x;
+    const dz = newZ - block.position.z;
+
+    const distance = Math.sqrt(dx * dx + dz * dz);
+
+    if(distance < 1.2){
+
+      collided = true;
+
+    }
+
+  });
+
+  // Collision monster
+  const mdx = newX - monster.position.x;
+  const mdz = newZ - monster.position.z;
+
+  const mdist = Math.sqrt(mdx * mdx + mdz * mdz);
+
+  if(mdist < 2){
+
+    collided = true;
+
+  }
+
+  return collided;
+
+  }
+
 function animate() {
   requestAnimationFrame(animate);
 
@@ -531,8 +571,21 @@ const forwardZ = Math.cos(cameraYaw);
 
   // Movement Fixed
 
-player.x += (forwardX * joyY + forwardZ * joyX) * speed;
-player.z += (forwardZ * joyY - forwardX * joyX) * speed;
+const moveX =
+(forwardX * joyY + forwardZ * joyX) * speed;
+
+const moveZ =
+(forwardZ * joyY - forwardX * joyX) * speed;
+
+const nextX = player.x + moveX;
+const nextZ = player.z + moveZ;
+
+if(!checkCollision(nextX, nextZ)){
+
+  player.x = nextX;
+  player.z = nextZ;
+
+}
 
   // Gravity
   player.velY -= 0.01;
