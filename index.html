@@ -28,9 +28,9 @@ body {
 
 #pickupBtn { right: 30px; bottom: 40px; }
 
-#inventory { position: fixed; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; } </style>
+#inventory { position: fixed; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; }
 
-  #hotbar{
+#hotbar{
   position: fixed;
   bottom: 20px;
   left: 50%;
@@ -57,6 +57,8 @@ body {
 .selected{
   border: 3px solid yellow;
 }
+  
+</style>
 
 </head>
 <body><div id="ui">
@@ -264,11 +266,15 @@ pickupBtn.addEventListener("touchstart", () => {
     camera
   );
 
-  const intersects = raycaster.intersectObjects(blocks);
+  const intersects = raycaster.intersectObjects(blocks, false);
 
   if(intersects.length > 0){
 
     const hit = intersects[0].object;
+
+    const distance = camera.position.distanceTo(hit.position);
+
+if(distance > 6) return;
 
     if(hit === ground) return;
 
