@@ -355,8 +355,10 @@ camera.updateProjectionMatrix();
   const forwardX = Math.sin(cameraYaw);
 const forwardZ = Math.cos(cameraYaw);
 
-  player.x += (forwardX * -joyY + forwardZ * joyX) * speed;
-  player.z += (forwardZ * -joyY - forwardX * joyX) * speed;
+  // Movement Fixed
+
+player.x += (forwardX * joyY + forwardZ * joyX) * speed;
+player.z += (forwardZ * joyY - forwardX * joyX) * speed;
 
   // Gravity
   player.velY -= 0.01;
