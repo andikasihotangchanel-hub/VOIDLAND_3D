@@ -342,10 +342,15 @@ window.addEventListener("touchend", (e) => {
 
 });
 
+  let targetFov = 75;
+
 function animate() {
   requestAnimationFrame(animate);
 
   const speed = 0.12;
+
+  camera.fov += (targetFov - camera.fov) * 0.1;
+camera.updateProjectionMatrix();
 
   const forwardX = Math.sin(cameraYaw);
 const forwardZ = Math.cos(cameraYaw);
@@ -376,10 +381,12 @@ const forwardZ = Math.cos(cameraYaw);
 
   camera.position.set(player.x, player.y, player.z);
 
-  camera.rotation.order = "YXZ";
+  // Smooth Camera
 
-camera.rotation.y = cameraYaw;
-camera.rotation.x = cameraPitch;
+camera.rotation.order = "YXZ";
+
+camera.rotation.y += (cameraYaw - camera.rotation.y) * 0.15;
+camera.rotation.x += (cameraPitch - camera.rotation.x) * 0.15;
 
   renderer.render(scene, camera);
 }
