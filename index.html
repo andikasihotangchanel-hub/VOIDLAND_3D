@@ -30,6 +30,34 @@ body {
 
 #inventory { position: fixed; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; } </style>
 
+  #hotbar{
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(4,70px);
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.slot{
+  width: 70px;
+  height: 70px;
+  background: rgba(0,0,0,0.6);
+  border: 3px solid white;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  border-radius: 10px;
+}
+
+.selected{
+  border: 3px solid yellow;
+}
+
 </head>
 <body><div id="ui">
   <div id="crosshair">+</div>
@@ -39,7 +67,11 @@ body {
     <div id="joystickStick"></div>
   </div><button class="btn" id="jumpBtn">↑</button> <button class="btn" id="pickupBtn">Ambil</button>
 
-</div><script type="module">
+<div id="hotbar"></div>
+
+</div>
+
+<script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
 
 const scene = new THREE.Scene();
@@ -48,6 +80,7 @@ scene.fog = new THREE.Fog(0x000000, 20, 100);
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
+  const raycaster = new THREE.Raycaster();
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -92,6 +125,44 @@ for (let i = 0; i < 40; i++) {
 // Wood Items
 const woods = [];
 
+  const blocks = [];
+const inventory = [];
+let selectedItem = null;
+
+const hotbar = document.getElementById("hotbar");
+
+function updateHotbar(){
+
+  hotbar.innerHTML = "";
+
+  for(let i = 0; i < 4; i++){
+
+    const slot = document.createElement("div");
+    slot.className = "slot";
+
+    const item = inventory[i];
+
+    if(item){
+
+      slot.innerText = item;
+
+      if(selectedItem === item){
+        slot.classList.add("selected");
+      }
+
+      slot.onclick = () => {
+        selectedItem = item;
+        updateHotbar();
+      };
+
+    }
+
+    hotbar.appendChild(slot);
+
+  }
+
+}
+
 for (let i = 0; i < 15; i++) {
   const wood = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
@@ -108,6 +179,9 @@ for (let i = 0; i < 15; i++) {
 
   scene.add(wood);
   woods.push(wood);
+  
+  blocks.push(wood);
+wood.userData.type = "Kayu";
 }
 
 // Monster
@@ -181,20 +255,37 @@ jumpBtn.addEventListener('touchstart', () => {
 });
 
 // Pickup
-const pickupBtn = document.getElementById('pickupBtn');
+pickupBtn.addEventListener("touchstart", () => {
 
-pickupBtn.addEventListener('touchstart', () => {
-  woods.forEach((wood) => {
-    if (!wood.visible) return;
+  raycaster.setFromCamera(
+    new THREE.Vector2(0,0),
+    camera
+  );
 
-    const dist = camera.position.distanceTo(wood.position);
+  const intersects = raycaster.intersectObjects(blocks);
 
-    if (dist < 4) {
-      wood.visible = false;
-      player.wood++;
-      document.getElementById('woodCount').innerText = player.wood;
+  if(intersects.length > 0){
+
+    const hit = intersects[0].object;
+
+    if(hit === ground) return;
+
+    scene.remove(hit);
+
+    const type = hit.userData.type;
+
+    inventory.push(type);
+
+    updateHotbar();
+
+    const index = blocks.indexOf(hit);
+
+    if(index > -1){
+      blocks.splice(index,1);
     }
-  });
+
+  }
+
 });
 
 // Random Events
@@ -343,6 +434,50 @@ window.addEventListener("touchend", (e) => {
 });
 
   let targetFov = 75;
+
+  window.addEventListener("dblclick", () => {
+
+  if(!selectedItem) return;
+
+  raycaster.setFromCamera(
+    new THREE.Vector2(0,0),
+    camera
+  );
+
+  const intersects = raycaster.intersectObject(ground);
+
+  if(intersects.length > 0){
+
+    const point = intersects[0].point;
+
+    let block;
+
+    if(selectedItem === "Kayu"){
+
+      block = new THREE.Mesh(
+        new THREE.BoxGeometry(1,1,1),
+        new THREE.MeshLambertMaterial({
+          color: 0xaa7744
+        })
+      );
+
+      block.userData.type = "Kayu";
+
+    }
+
+    block.position.set(
+      Math.round(point.x),
+      0,
+      Math.round(point.z)
+    );
+
+    scene.add(block);
+
+    blocks.push(block);
+
+  }
+
+});
 
 function animate() {
   requestAnimationFrame(animate);
