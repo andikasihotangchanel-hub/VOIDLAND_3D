@@ -440,15 +440,82 @@ const events = [
   }  
 ];
 
-setInterval(() => {
-  const event = events[Math.floor(Math.random() * events.length)];
+function startDay(){
 
-  eventText.innerText = event.name;
-  event.action();
+  isDay = true;
+
+  eventText.innerText = "🌞 Pagi Hari";
+
+  scene.background =
+  new THREE.Color(0x87ceeb);
+
+  scene.fog.color.set(0x87ceeb);
+
+  // Monster hilang saat pagi
+  monster.visible = false;
 
   setTimeout(() => {
-    eventText.innerText = 'Menjelajah VOIDLAND...';
+
+    startNight();
+
+  }, 60000);
+
+}
+
+function startNight(){
+
+  isDay = false;
+
+  eventText.innerText = "🌙 Malam Hari";
+
+  scene.background =
+  new THREE.Color(0x000000);
+
+  scene.fog.color.set(0x000000);
+
+  // Monster muncul malam
+  monster.visible = true;
+
+  setTimeout(() => {
+
+    startDay();
+
+  }, 180000);
+
+}
+
+// Mulai dari pagi
+startDay();
+
+// EVENT malam
+setInterval(() => {
+
+  if(isDay) return;
+
+  const allowedEvents = events.filter(
+  e =>
+  e.name === '☁ Kabut Misterius' ||
+  e.name === '🌙 Blood Moon' ||
+  e.name === '💎 Diamond Chest'
+);
+
+  const randomEvent =
+allowedEvents[Math.floor(
+  Math.random() * allowedEvents.length
+)];
+
+  randomEvent.action();
+
+  eventText.innerText =
+  randomEvent.name;
+
+  setTimeout(() => {
+
+    eventText.innerText =
+    "🌙 Malam Hari";
+
     scene.fog.color.set(0x000000);
+
   }, 7000);
 
 }, 15000);
@@ -541,6 +608,8 @@ window.addEventListener("touchend", (e) => {
 });
 
   let targetFov = 75;
+
+  let isDay = true;
 
   const placeBtn = document.getElementById("placeBtn");
 
