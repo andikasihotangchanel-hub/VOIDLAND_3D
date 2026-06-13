@@ -160,412 +160,173 @@ AMBIL
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x000000, 20, 100);
+scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-  const raycaster = new THREE.Raycaster();
-renderer.setSize(innerWidth, innerHeight);
-document.body.appendChild(renderer.domElement);
-
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(10, 20, 10);
-scene.add(light);
-
-scene.add(new THREE.AmbientLight(0x888888));
-
-  
-
-// Ground
-const ground = new THREE.Mesh(
-  new THREE.BoxGeometry(200, 1, 200),
-  new THREE.MeshLambertMaterial({ color: 0x225522 })
+const camera = new THREE.PerspectiveCamera(
+75,
+window.innerWidth / window.innerHeight,
+0.1,
+1000
 );
-ground.position.y = -1;
-scene.add(ground);
 
-// Player
+const renderer = new THREE.WebGLRenderer({
+antialias:true
+});
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+document.body.appendChild(
+renderer.domElement
+);
+
+// Cahaya
+const sun = new THREE.DirectionalLight(
+0xffffff,
+1.2
+);
+
+sun.position.set(20,30,10);
+
+scene.add(sun);
+
+scene.add(
+new THREE.AmbientLight(
+0xffffff,
+0.7
+)
+);
+
+// DATA GAME
+const blocks = [];
+const zombies = [];
+
+let playerHP = 100;
+let currentWeapon = "Tidak Ada";
+
+document.getElementById(
+"hpText"
+).innerText = playerHP;
+
+document.getElementById(
+"weaponText"
+).innerText = currentWeapon;
+
+// PLAYER
 const player = {
-  x: 0,
-  y: 1.5,
-  z: 3,
-  velY: 0,
-  grounded: false,
-  wood: 0
+x:0,
+y:3,
+z:0,
+velY:0,
+grounded:false
 };
 
-camera.position.set(player.x, player.y, player.z);
+camera.position.set(
+player.x,
+player.y,
+player.z
+);
 
-// Joystick
-const joystickBase = document.getElementById('joystickBase');
-const joystickStick = document.getElementById('joystickStick');
+// ROOFTOP BESAR
+
+const rooftop = new THREE.Mesh(
+new THREE.BoxGeometry(
+80,
+2,
+80
+),
+new THREE.MeshLambertMaterial({
+color:0x666666
+})
+);
+
+rooftop.position.y = -1;
+
+scene.add(rooftop);
+
+// TEMPAT SEMBUNYI
+
+for(let i=0;i<20;i++){
+
+const wall = new THREE.Mesh(
+new THREE.BoxGeometry(
+4,
+4,
+1
+),
+new THREE.MeshLambertMaterial({
+color:0x444444
+})
+);
+
+wall.position.set(
+(Math.random()-0.5)*60,
+1,
+(Math.random()-0.5)*60
+);
+
+scene.add(wall);
+
+blocks.push(wall);
+
+}
+
+// PETI SENJATA
+
+const weaponChests = [];
+
+const chestCount =
+Math.floor(
+Math.random()*3
+)+3;
+
+for(let i=0;i<chestCount;i++){
+
+const chest = new THREE.Mesh(
+new THREE.BoxGeometry(
+2,
+2,
+2
+),
+new THREE.MeshLambertMaterial({
+color:0xffff00
+})
+);
+
+chest.position.set(
+(Math.random()-0.5)*60,
+1,
+(Math.random()-0.5)*60
+);
+
+chest.userData.weaponChest = true;
+
+scene.add(chest);
+
+weaponChests.push(chest);
+blocks.push(chest);
+
+}
+
+// JOYSTICK
+
+const joystickBase =
+document.getElementById(
+'joystickBase'
+);
+
+const joystickStick =
+document.getElementById(
+'joystickStick'
+);
 
 let joyX = 0;
 let joyY = 0;
-
 let dragging = false;
 
-joystickBase.addEventListener('touchstart', () => {
-  dragging = true;
-});
-
-window.addEventListener('touchend', () => {
-  dragging = false;
-  joyX = 0;
-  joyY = 0;
-  joystickStick.style.left = '35px';
-  joystickStick.style.top = '35px';
-});
-
-window.addEventListener('touchmove', (e) => {
-  if (!dragging) return;
-
-  const touch = e.touches[0];
-  const rect = joystickBase.getBoundingClientRect();
-
-  const x = touch.clientX - rect.left - 65;
-  const y = touch.clientY - rect.top - 65;
-
-  const dist = Math.min(40, Math.sqrt(x*x + y*y));
-  const angle = Math.atan2(y, x);
-
-  joyX = Math.cos(angle) * (dist / 40);
-  joyY = Math.sin(angle) * (dist / 40);
-
-  joystickStick.style.left = `${35 + joyX * 40}px`;
-  joystickStick.style.top = `${35 + joyY * 40}px`;
-});
-
-// Jump
-const jumpBtn = document.getElementById('jumpBtn');
-
-  const pickupBtn = document.getElementById('pickupBtn');
-
-jumpBtn.addEventListener('touchstart', () => {
-  if (player.grounded) {
-    player.velY = 0.22;
-    player.grounded = false;
-  }
-});
-
-// Pickup
-pickupBtn.addEventListener("touchstart", () => {
-
-  let closestBlock = null;
-  let closestDistance = 999;
-
-  blocks.forEach((block) => {
-
-    const distance = camera.position.distanceTo(block.position);
-
-    if(distance < 5){
-
-      // Cek arah depan kamera
-      const dir = new THREE.Vector3();
-      camera.getWorldDirection(dir);
-
-      const toBlock = new THREE.Vector3(
-        block.position.x - camera.position.x,
-        block.position.y - camera.position.y,
-        block.position.z - camera.position.z
-      ).normalize();
-
-      const dot = dir.dot(toBlock);
-
-      // Harus menghadap block
-      if(dot > 0.8){
-
-        if(distance < closestDistance){
-
-          closestDistance = distance;
-          closestBlock = block;
-
-        }
-
-      }
-
-    }
-
-  });
-
-if(closestBlock){
-
   
-
-  scene.remove(closestBlock);
-
-  inventory.push(
-    closestBlock.userData.type
-  );
-
-    updateHotbar();
-
-    const index = blocks.indexOf(closestBlock);
-
-    if(index > -1){
-
-      blocks.splice(index,1);
-
-    }
-
-  }
-
-});
-
-// Touch look
-let lastTouchX = null;
-
-window.addEventListener('touchmove', (e) => {
-  if (e.touches.length < 2) return;
-
-  const touch = e.touches[1];
-
-  if (lastTouchX !== null) {
-    const delta = touch.clientX - lastTouchX;
-    camera.rotation.y -= delta * 0.005;
-  }
-
-  lastTouchX = touch.clientX;
-});
-
-window.addEventListener('touchend', () => {
-  lastTouchX = null;
-});
-
-  // CAMERA TOUCH LOOK
-
-let lookTouchId = null;
-let lastLookX = 0;
-let lastLookY = 0;
-
-let cameraYaw = 0;
-let cameraPitch = 0;
-
-window.addEventListener("touchstart", (e) => {
-
-  for (let touch of e.touches) {
-
-    // Jangan ganggu joystick
-    if (touch.clientX > window.innerWidth / 2) {
-
-      lookTouchId = touch.identifier;
-      lastLookX = touch.clientX;
-      lastLookY = touch.clientY;
-
-    }
-
-  }
-
-});
-
-window.addEventListener("touchmove", (e) => {
-
-  for (let touch of e.touches) {
-
-    if (touch.identifier === lookTouchId) {
-
-      const deltaX = touch.clientX - lastLookX;
-      const deltaY = touch.clientY - lastLookY;
-
-      cameraYaw -= deltaX * 0.003;
-      cameraPitch -= deltaY * 0.003;
-
-      // Batas lihat atas bawah
-      cameraPitch = Math.max(
-        -1.2,
-        Math.min(1.2, cameraPitch)
-      );
-
-      lastLookX = touch.clientX;
-      lastLookY = touch.clientY;
-
-    }
-
-  }
-
-});
-
-window.addEventListener("touchend", (e) => {
-
-  for (let touch of e.changedTouches) {
-
-    if (touch.identifier === lookTouchId) {
-
-      lookTouchId = null;
-
-    }
-
-  }
-
-});
-
-  let targetFov = 75;
-
-  const placeBtn = document.getElementById("placeBtn");
-
-placeBtn.addEventListener("touchstart", () => {
-
-  if(!selectedItem) return;
-
-  const dir = new THREE.Vector3();
-  camera.getWorldDirection(dir);
-
-  const placeX = player.x + dir.x * 3;
-  const placeZ = player.z + dir.z * 3;
-
-  let block;
-
-  if(selectedItem === "Kayu"){
-
-    block = new THREE.Mesh(
-      new THREE.BoxGeometry(1,1,1),
-      new THREE.MeshLambertMaterial({
-        color: 0xaa7744
-      })
-    );
-
-    block.userData.type = "Kayu";
-
-  }
-
-  block.position.set(
-    Math.round(placeX),
-    0,
-    Math.round(placeZ)
-  );
-
-  scene.add(block);
-
-  blocks.push(block);
-
-});
-
-  function checkCollision(newX, newZ){
-
-  let collided = false;
-
-  blocks.forEach((block) => {
-
-    // Daun tidak ada collision
-    if(block.userData.noCollision) return;
-
-    const dx = newX - block.position.x;
-    const dz = newZ - block.position.z;
-
-    const distance = Math.sqrt(dx * dx + dz * dz);
-
-    if(distance < 1.2){
-
-      collided = true;
-
-    }
-
-  });
-
-  // Collision monster
-  const mdx = newX - monster.position.x;
-  const mdz = newZ - monster.position.z;
-
-  const mdist = Math.sqrt(mdx * mdx + mdz * mdz);
-
-  if(mdist < 2){
-
-    collided = true;
-
-  }
-
-  return collided;
-
-  }
-
-function animate() {
-  requestAnimationFrame(animate);
-
-  const speed = 0.12;
-
-  camera.fov += (targetFov - camera.fov) * 0.1;
-camera.updateProjectionMatrix();
-
-  const forwardX = Math.sin(cameraYaw);
-const forwardZ = Math.cos(cameraYaw);
-
-  // Movement Fixed
-
-const moveX =
-(forwardX * joyY + forwardZ * joyX) * speed;
-
-const moveZ =
-(forwardZ * joyY - forwardX * joyX) * speed;
-
-const nextX = player.x + moveX;
-const nextZ = player.z + moveZ;
-
-if(!checkCollision(nextX, nextZ)){
-
-  player.x = nextX;
-  player.z = nextZ;
-
-}
-
-  // Gravity
-  player.velY -= 0.01;
-  player.y += player.velY;
-
-  if (player.y <= 2) {
-    player.y = 2;
-    player.velY = 0;
-    player.grounded = true;
-  }
-
-  // Monster AI
-  const dx = player.x - monster.position.x;
-  const dz = player.z - monster.position.z;
-
-  const dist = Math.sqrt(dx*dx + dz*dz);
-
-  const campDx =
-monster.position.x - campfire.position.x;
-
-const campDz =
-monster.position.z - campfire.position.z;
-
-const campDist = Math.sqrt(
-  campDx * campDx +
-  campDz * campDz
-);
-
-// Monster takut api unggun
-if(campDist > 6){
-
-  if (dist < 30) {
-
-    monster.position.x += dx * 0.003;
-    monster.position.z += dz * 0.003;
-
-  }
-
-}
-
-  camera.position.set(player.x, player.y, player.z);
-
-  // Smooth Camera
-
-camera.rotation.order = "YXZ";
-
-camera.rotation.y += (cameraYaw - camera.rotation.y) * 0.15;
-camera.rotation.x += (cameraPitch - camera.rotation.x) * 0.15;
-
-  renderer.render(scene, camera);
-}
-
-animate();
-
-window.addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-});
 
 </script>
 </body>
