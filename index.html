@@ -1,84 +1,158 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>VOIDLAND 3D</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ROOFTOP SURVIVAL</title>
+
 <style>
-body {
-  margin: 0;
-  overflow: hidden;
-  font-family: sans-serif;
-  background: black;
-}canvas { display: block; }
 
-#ui { position: fixed; inset: 0; pointer-events: none; }
-
-#crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 25px; }
-
-#eventText { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: white; font-size: 22px; font-weight: bold; text-shadow: 0 0 10px black; }
-
-#joystickBase { position: fixed; left: 30px; bottom: 30px; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 3px solid rgba(255,255,255,0.25); pointer-events: auto; }
-
-#joystickStick { position: absolute; left: 35px; top: 35px; width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.5); }
-
-.btn { position: fixed; width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.3); color: white; font-size: 18px; font-weight: bold; pointer-events: auto; }
-
-#jumpBtn { right: 30px; bottom: 140px; }
-
-  #placeBtn {
-  right: 30px;
-  bottom: 240px;
-  }
-
-#pickupBtn { right: 30px; bottom: 40px; }
-
-#inventory { position: fixed; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; }
-
-#hotbar{
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: grid;
-  grid-template-columns: repeat(4,70px);
-  gap: 10px;
-  pointer-events: auto;
+body{
+  margin:0;
+  overflow:hidden;
+  background:black;
+  font-family:sans-serif;
 }
 
-.slot{
-  width: 70px;
-  height: 70px;
-  background: rgba(0,0,0,0.6);
-  border: 3px solid white;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  border-radius: 10px;
+canvas{
+  display:block;
 }
 
-.selected{
-  border: 3px solid yellow;
+#ui{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
 }
-  
+
+#crosshair{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  color:white;
+  font-size:28px;
+  font-weight:bold;
+}
+
+#info{
+  position:absolute;
+  top:20px;
+  left:20px;
+  color:white;
+  background:rgba(0,0,0,.5);
+  padding:10px;
+  border-radius:10px;
+}
+
+#eventText{
+  position:absolute;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  color:white;
+  font-size:22px;
+  font-weight:bold;
+}
+
+#joystickBase{
+  position:fixed;
+  left:30px;
+  bottom:30px;
+  width:130px;
+  height:130px;
+  border-radius:50%;
+  background:rgba(255,255,255,.15);
+  border:3px solid rgba(255,255,255,.3);
+  pointer-events:auto;
+}
+
+#joystickStick{
+  position:absolute;
+  left:35px;
+  top:35px;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:rgba(255,255,255,.5);
+}
+
+.btn{
+  position:fixed;
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  background:rgba(255,255,255,.2);
+  border:3px solid rgba(255,255,255,.3);
+  color:white;
+  font-weight:bold;
+  pointer-events:auto;
+}
+
+#jumpBtn{
+  right:30px;
+  bottom:240px;
+}
+
+#shootBtn{
+  right:30px;
+  bottom:140px;
+}
+
+#pickupBtn{
+  right:30px;
+  bottom:40px;
+}
+
+#weaponBox{
+  position:absolute;
+  right:20px;
+  top:20px;
+  color:white;
+  background:rgba(0,0,0,.5);
+  padding:10px;
+  border-radius:10px;
+}
+
 </style>
-
 </head>
-<body><div id="ui">
-  <div id="crosshair">+</div>
-  <div id="eventText">Menjelajah VOIDLAND...</div>
-  <div id="inventory">
-  Diamond yang kamu dapat:
-  <span id="diamondCount">0</span>
-  </div>
-  <div id="joystickBase">
-    <div id="joystickStick"></div>
-  </div><button class="btn" id="jumpBtn">↑</button> <button class="btn" id="pickupBtn">Ambil</button>
-  <button class="btn" id="placeBtn">Taruh</button>
 
-<div id="hotbar"></div>
+<body>
+
+<div id="ui">
+
+<div id="crosshair">+</div>
+
+<div id="eventText">
+Cari peti senjata!
+</div>
+
+<div id="info">
+HP: <span id="hpText">100</span><br>
+Zombie: <span id="zombieText">0</span>
+</div>
+
+<div id="weaponBox">
+Senjata:
+<span id="weaponText">
+Tidak Ada
+</span>
+</div>
+
+<div id="joystickBase">
+<div id="joystickStick"></div>
+</div>
+
+<button class="btn" id="jumpBtn">
+↑
+</button>
+
+<button class="btn" id="shootBtn">
+TEMBAK
+</button>
+
+<button class="btn" id="pickupBtn">
+AMBIL
+</button>
 
 </div>
 
