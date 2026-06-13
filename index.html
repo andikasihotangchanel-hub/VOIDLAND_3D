@@ -503,7 +503,121 @@ lookTouchId = null;
 
 });
 
-  
+  // PETI SENJATA
+
+const pickupBtn =
+document.getElementById(
+"pickupBtn"
+);
+
+pickupBtn.addEventListener(
+"touchstart",
+() => {
+
+let closestChest = null;
+let closestDistance = 999;
+
+weaponChests.forEach(
+(chest)=>{
+
+const distance =
+camera.position.distanceTo(
+chest.position
+);
+
+if(distance < 5){
+
+if(distance <
+closestDistance){
+
+closestDistance =
+distance;
+
+closestChest =
+chest;
+
+}
+
+}
+
+});
+
+if(closestChest){
+
+const random =
+Math.random();
+
+if(random < 0.6){
+
+currentWeapon =
+"Pistol";
+
+}
+else if(random < 0.9){
+
+currentWeapon =
+"AK47";
+
+}
+else{
+
+currentWeapon =
+"GROZA";
+
+}
+
+document.getElementById(
+"weaponText"
+).innerText =
+currentWeapon;
+
+scene.remove(
+closestChest
+);
+
+const index =
+weaponChests.indexOf(
+closestChest
+);
+
+if(index > -1){
+
+weaponChests.splice(
+index,
+1
+);
+
+}
+
+}
+
+});
+
+const shootBtn =
+document.getElementById(
+"shootBtn"
+);
+
+shootBtn.addEventListener(
+"touchstart",
+() => {
+
+if(
+currentWeapon ===
+"Tidak Ada"
+) return;
+
+eventText.innerText =
+"🔫 Menembak!";
+
+setTimeout(()=>{
+
+eventText.innerText =
+"Cari peti senjata!";
+
+},1000);
+
+});  
 
 </script>
 </body>
