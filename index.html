@@ -326,6 +326,183 @@ let joyX = 0;
 let joyY = 0;
 let dragging = false;
 
+  // JOYSTICK
+
+joystickBase.addEventListener("touchstart", () => {
+  dragging = true;
+});
+
+window.addEventListener("touchend", () => {
+
+  dragging = false;
+
+  joyX = 0;
+  joyY = 0;
+
+  joystickStick.style.left = "35px";
+  joystickStick.style.top = "35px";
+
+});
+
+window.addEventListener("touchmove", (e) => {
+
+  if(!dragging) return;
+
+  const touch = e.touches[0];
+
+  const rect =
+  joystickBase.getBoundingClientRect();
+
+  const x =
+  touch.clientX - rect.left - 65;
+
+  const y =
+  touch.clientY - rect.top - 65;
+
+  const dist = Math.min(
+    40,
+    Math.sqrt(x*x+y*y)
+  );
+
+  const angle =
+  Math.atan2(y,x);
+
+  joyX =
+  Math.cos(angle)*(dist/40);
+
+  joyY =
+  Math.sin(angle)*(dist/40);
+
+  joystickStick.style.left =
+  `${35+joyX*40}px`;
+
+  joystickStick.style.top =
+  `${35+joyY*40}px`;
+
+});
+
+// LOMPAT
+
+const jumpBtn =
+document.getElementById(
+"jumpBtn"
+);
+
+jumpBtn.addEventListener(
+"touchstart",
+() => {
+
+  if(player.grounded){
+
+    player.velY = 0.22;
+    player.grounded = false;
+
+  }
+
+});
+
+// KAMERA SENTUH
+
+let cameraYaw = 0;
+let cameraPitch = 0;
+
+let lookTouchId = null;
+
+let lastLookX = 0;
+let lastLookY = 0;
+
+window.addEventListener(
+"touchstart",
+(e)=>{
+
+for(let touch of e.touches){
+
+if(
+touch.clientX >
+window.innerWidth/2
+){
+
+lookTouchId =
+touch.identifier;
+
+lastLookX =
+touch.clientX;
+
+lastLookY =
+touch.clientY;
+
+}
+
+}
+
+});
+
+window.addEventListener(
+"touchmove",
+(e)=>{
+
+for(let touch of e.touches){
+
+if(
+touch.identifier ===
+lookTouchId
+){
+
+const deltaX =
+touch.clientX -
+lastLookX;
+
+const deltaY =
+touch.clientY -
+lastLookY;
+
+cameraYaw -=
+deltaX * 0.003;
+
+cameraPitch -=
+deltaY * 0.003;
+
+cameraPitch =
+Math.max(
+-1.2,
+Math.min(
+1.2,
+cameraPitch
+)
+);
+
+lastLookX =
+touch.clientX;
+
+lastLookY =
+touch.clientY;
+
+}
+
+}
+
+});
+
+window.addEventListener(
+"touchend",
+(e)=>{
+
+for(let touch of
+e.changedTouches){
+
+if(
+touch.identifier ===
+lookTouchId
+){
+
+lookTouchId = null;
+
+}
+
+}
+
+});
+
   
 
 </script>
